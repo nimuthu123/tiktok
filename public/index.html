@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Video Downloader</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #fe2c55;
+            outline: none;
+        }
+
+        button {
+            background: #fe2c55;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background: #e62548;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            white-space: pre-line;
+        }
+
+        .status.error {
+            background: #ffe5e5;
+            color: #d63031;
+            display: block;
+        }
+
+        .status.success {
+            background: #e5ffe5;
+            color: #27ae60;
+            display: block;
+        }
+
+        .status.loading {
+            background: #e5f0ff;
+            color: #2980b9;
+            display: block;
+        }
+
+        .instructions {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #fe2c55;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .url-examples {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .url-examples code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>TikTok Video Downloader</h1>
+            <div class="input-group">
+                <input type="text" id="videoUrl" placeholder="Paste TikTok video URL here" />
+                <button onclick="downloadVideo()" id="downloadBtn">Download</button>
+            </div>
+            <div id="status" class="status"></div>
+            <div id="loader" class="loader"></div>
+            <div class="url-examples">
+                <p><strong>Valid URL formats:</strong></p>
+                <p><code>https://www.tiktok.com/@username/video/1234567890123456789</code></p>
+                <p><code>https://vm.tiktok.com/XXXXXXXX/</code></p>
+                <p><code>https://vt.tiktok.com/XXXXXXXX/</code></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Instructions</h2>
+            <div class="instructions">
+                <p>1. Open TikTok in your browser or app</p>
+                <p>2. Find the video you want to download</p>
+                <p>3. Click the "Share" button</p>
+                <p>4. Choose "Copy Link" or "Copy URL"</p>
+                <p>5. Paste the URL above and click Download</p>
+                <p><strong>Note:</strong> Make sure the video is:</p>
+                <ul>
+                    <li>Public (not private)</li>
+                    <li>Still available (not deleted)</li>
+                    <li>Not region-locked</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoUrlInput = document.getElementById('videoUrl');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const loader = document.getElementById('loader');
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function showLoader(show) {
+            loader.style.display = show ? 'block' : 'none';
+            downloadBtn.disabled = show;
+        }
+
+        function validateTikTokUrl(url) {
+            // Basic URL validation
+            try {
+                new URL(url);
+            } catch {
+                return false;
+            }
+
+            // Check for TikTok domains
+            const validDomains = ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'];
+            return validDomains.some(domain => url.includes(domain));
+        }
+
+        async function downloadVideo() {
+            const videoUrl = videoUrlInput.value.trim();
+            
+            if (!videoUrl) {
+                showStatus('Please enter a TikTok video URL', 'error');
+                return;
+            }
+
+            if (!validateTikTokUrl(videoUrl)) {
+                showStatus('Invalid TikTok URL. Please make sure to copy the complete video URL from TikTok.\n\nExample formats:\nhttps://www.tiktok.com/@username/video/1234567890123456789\nhttps://vm.tiktok.com/XXXXXXXX/', 'error');
+                return;
+            }
+
+            showStatus('Downloading video... This may take a few moments', 'loading');
+            showLoader(true);
+
+            try {
+                const response = await fetch(`/download?url=${encodeURIComponent(videoUrl)}`, {
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to download video');
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('video')) {
+                    throw new Error('Invalid response from server');
+                }
+
+                // Create a temporary link to download the file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tiktok_video_${Date.now()}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showStatus('Video downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('Download error:', error);
+                showStatus(error.message || 'Error downloading video. Please try again.', 'error');
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // Allow pressing Enter to download
+        videoUrlInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                downloadVideo();
+            }
+        });
+
+        // Clear error when typing
+        videoUrlInput.addEventListener('input', function() {
+            status.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
