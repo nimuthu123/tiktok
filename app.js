@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const port = 3001;
+const port = 7000;
 
 app.use(express.static('public'));
 app.use(express.json());
